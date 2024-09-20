@@ -1,0 +1,148 @@
+---
+title: "Proyecto"
+author: "Alejandro Quesada Leiva"
+date: "`r Sys.Date()`"
+output: word_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Colegio Universitario de Cartago
+## Lenguaje de Minería de Datos
+## Profesor: Osvaldo Gonzalez Chaves
+## II Cuatrimestre 2024
+
+
+## DataSet Employees Analisys
+
+Primero obtenemos información básica de los datos del Data Set que vamos a utilizar
+
+```{r employees, include=FALSE}
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("rpart","aplpack","corrplot","sm","gapminder","openintro",
+              "dplyr","ggplot2","readr","lubridate","tidyr", "forecast",
+              "corrplot", "plotly", "rmarkdown","tinytex")
+ipak(packages)
+
+employees <- read.csv("C:\\Users\\ale23\\OneDrive\\Escritorio\\CUC\\segundoCuatri\\mineria\\scripsR\\Employees_dataset.csv")
+```
+
+```{r clas_employees}
+class(employees)
+```
+
+```{r dim_employees}
+dim(employees)
+```
+
+```{r names_employees}
+names(employees)
+```
+
+```{r str_employees}
+str(employees)
+```
+
+```{r glimpse_employees}
+glimpse(employees)
+```
+
+Realizamos la verificación de que el set no contenga nulos, en caso de que el set SI tenga nulos, se debe hacer la limpieza del set, esto con el fin de que los resultados sean los correctos.
+
+```{r verif_nulls}
+any(is.na(employees)) #false
+summary(employees)
+```
+
+# Correlaciones
+
+```{r corrMat1, include=FALSE}
+employees_numeric <- select(employees,`MonthlySalary`:`OvertimeHours`)
+employees_numeric
+
+corrMat <- cor(employees_numeric)
+```
+
+```{r corrMat, echo=FALSE}
+corrplot(corrMat,method="ellipse")
+```
+
+# Correlaciones encontradas (+)
+1.  Annual Salary --\> Monthly Salary
+
+# Correlaciones encontradas (-)
+2.  Overtime Hours --\> Monthly Salary
+3.  Overtime Hours --\> Annual Salary
+4.  Sick Leaves --\> Job Rate
+
+# Boxplot
+
+```{r plot1, echo=FALSE}
+boxplot(`AnnualSalary` ~ `MonthlySalary`, data = employees_numeric,col = "lightblue")
+title("Relacion de salario anual y salario mensual")
+```
+
+```{r plot2, echo=FALSE}
+boxplot(`OvertimeHours` ~ `MonthlySalary`, data = employees_numeric,col = "lightblue")
+title("Relacion de horas extras trabajadas
+      y salario mensual")
+```
+
+```{r plot3, echo=FALSE}
+boxplot(`OvertimeHours` ~ `AnnualSalary`, data = employees_numeric,col = "lightblue")
+title("Relacion de horas extras trabajadas
+      y salario anual")
+```
+
+```{r plot4, echo=FALSE}
+boxplot(`SickLeaves` ~ `JobRate`, data = employees_numeric,col = "lightblue")
+title("Relacion de bajas por enfermedad
+      y tasa de trabajo")
+```
+
+# Algoritmo (Regresion lineal multiple)
+
+```{r regLineal1,  include=FALSE}
+# Ajustar el modelo de regresión lineal múltiple
+model_projection <- lm(MonthlySalary ~ Years + Gender, data = employees)
+
+# Resumen del modelo
+summary(model_projection)
+
+# Crear una nueva columna para las predicciones
+employees$Projected_Salary <- predict(model_projection, employees)
+```
+
+```{r regLineal, echo=FALSE}
+ggplot(employees, aes(x = Years, y = Projected_Salary, color = Gender)) +
+  geom_point(aes(y = MonthlySalary), alpha = 0.5) +  # Puntos originales
+  geom_line() +  # Línea de proyección
+  labs(title = "Proyección Salario Mensual - 
+       Años Experiencia y Género",
+       x = "Años de Experiencia",
+       y = "Salario Mensual Proyectado (USD)") +
+  theme_minimal()
+```
+
+# APIs en R
+
+# Recomendaciones:
+
+1. Obtener datos de América o Europa, para lograr realizar una comparativa
+2. Obtener el estado socioeconómico de los trabajadores (pueden existir relaciones con otros indicadores)
+3. Obtener el nivel de satisfacción/felicidad de los trabajadores (pueden existir relaciones con otros indicadores)
+
+
+# Conclusiones
+1. El salario varía en prácticamente todos los sectores respecto al género, en unos más, en otros menos. En unos sectores ganan más las mujeres en comparación con los hombres y en otros sectores pasa lo contrario
+2. Dentro de más años este laborando hay una menor probabilidad que de se tomen licencias, siendo el punto más alto a los 5 años
+3. Siria y Egipto son los países con mayor probabilidad de tomar licencias por enfermedad
+4. No hay relación entre salario anual y tasa de retención de los empleados, esto puede estar sujeto a otros factores como felicidad/satisfacción/relaciones etc.
+
